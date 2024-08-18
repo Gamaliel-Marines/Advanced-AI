@@ -3,7 +3,7 @@
 # ====================================================================================================================================== #
 #                                                   Gamaliel Marines Olvera - A01708746                                                  #  
 #                                                             09/13/2024                                                                 #   
-#
+#                                                                                                                                        #        
 # ====================================================================================================================================== #
 
 
@@ -112,7 +112,7 @@ def mean_square_error_function(parameters, x_features, y_results):
 		# MSE per case.
 		# Mean square error function computation with: MSE = 1/n * Σ(X₁ - Y₂)²
 		error = y_hypothesis - y_results[i]
-		acumulated_error = error ** 2
+		acumulated_error += error ** 2
 	
 	mean_square_error = acumulated_error / len(x_features)
 
@@ -146,11 +146,11 @@ def mean_square_error_function(parameters, x_features, y_results):
 def gradient_descent_function(parameters, x_features, y_results, alfa):
     gradient_descent = list(parameters)
     for i in range(len(parameters)):
-        summation = 0
+        temp = 0
         for j in range(len(x_features)):
             error = hypothesis_function(parameters, x_features[j]) - y_results[j]
-            summation += error * x_features[j][i]
-        gradient_descent[i] = parameters[i] - (alfa * (1/len(x_features)) * summation)
+            temp += error * x_features[j][i]
+        gradient_descent[i] = parameters[i] - (alfa * (1/len(x_features)) * temp)
     return gradient_descent
 
 # ====================================================================================================================================== #
@@ -210,7 +210,7 @@ x_features = scaling_function(x_features)
 #	                                                         2. Computation                                                              #
 # ====================================================================================================================================== #
 
-alfa = 0.003
+alfa = 0.03
 parameters = [0, 0, 0]  # Initial θs (parameters) for bias, temp, rain_1h
 epoch = 0
 
@@ -231,7 +231,7 @@ while True:
     print("Parameters: ", parameters)
     print("Old Parameters: ", old_parameters)
 	# When the the parameters remain the same (minimum error) or the epoch (training iterations) are reached, print the result.
-    if(old_parameters == parameters or epoch == 100):
+    if(old_parameters == parameters or epoch == 200):
 		#print("Samples:")
 		#print(x_features)
 		#print("Final Params:")
@@ -243,6 +243,7 @@ print("Final Parameters: ", parameters)
 
 # make a prediction using the final parameters
 print("Prediction: ", hypothesis_function(parameters, [1, 0.5, 0.1]))
+
 
 
 # ====================================================================================================================================== #
