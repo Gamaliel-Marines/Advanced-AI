@@ -2,7 +2,7 @@
 #                        Implementación de una técnica de aprendizaje máquina sin el uso de un framework                                 #
 # ====================================================================================================================================== #
 #                                                   Gamaliel Marines Olvera - A01708746                                                  #  
-#                                                             09/13/2024                                                                 #   
+#                                                             09/22/2024                                                                 #   
 #                                                                                                                                        #        
 # ====================================================================================================================================== #
 
@@ -15,8 +15,9 @@
 #
 # The algorithm uses the gradient descent optimization technique to minimize the error between the predicted value and the real value.
 #
-# The code reads a dataset from a CSV file, extracts the features and the target variable, scales the dataset, and then applies the
-# gradient descent algorithm to find the optimal parameters for the linear regression model.
+# The code reads a dataset from a CSV file, extracts the features and the target variable, scales the dataset, applies the
+# gradient descent algorithm to find the optimal parameters for the linear regression model, and uses mean square error to find the error
+#for each epoch.
 #
 # The code also calculates the mean square error for each epoch and generates a graph to visualize the error reduction.
 #
@@ -55,10 +56,13 @@ import numpy as np
 import csv
 # import matplotlib library to generate graphs
 import matplotlib.pyplot as plt
+# import train_test_split from sklearn to split the dataset into training and testing sets
+from sklearn.model_selection import train_test_split
 
 
 # Global variable to store the error
 __error__ = []
+
 
 # ====================================================================================================================================== #
 #                                                          HYPOTHESIS FUNCTION                                                           #
@@ -80,10 +84,10 @@ __error__ = []
 # ====================================================================================================================================== #
 
 def hypothesis_function(parameters, x_features):
-    summation = 0                                                    	 	
+    add = 0                                                    	 	
     for i in range(len(parameters)):                              			
-        summation += parameters[i] * x_features[i]   			
-    return summation                                                 	 	
+        add += parameters[i] * x_features[i]   			
+    return add                                                 	 	
 
 
 # ====================================================================================================================================== #
@@ -95,29 +99,25 @@ def hypothesis_function(parameters, x_features):
 # x_features -> Feature x.
 # y_results -> Expected results.
 
+
 def mean_square_error_function(parameters, x_features, y_results):
+    # Variable to store the summation of differences.
+    acumulated_error = 0
+    for i in range(len(x_features)):
+        # HYPOTHESIS FUNCTION
+        y_hypothesis = hypothesis_function(parameters, x_features[i])
+
+        # Prints the computed result and the real result
+        print( "Computed Y:  %f  Real Y: %f " % (y_hypothesis, y_results[i]))
+        
+        # MSE per case.
+        error = y_hypothesis - y_results[i]
+        acumulated_error += error ** 2
     
-	global __error__
+    mean_square_error = acumulated_error / len(x_features)
     
-	# Variable to store the summation of differences.
-	acumulated_error = 0
-	for i in range(len(x_features)):
-
-		# HYPOTHESIS FUNCTION
-		y_hypothesis = hypothesis_function(parameters, x_features[i])
-
-		# Prints the computated result and the real result
-		print( "Computed Y:  %f  Real Y: %f " % (y_hypothesis,  y_results[i]))
-		
-		# MSE per case.
-		# Mean square error function computation with: MSE = 1/n * Σ(X₁ - Y₂)²
-		error = y_hypothesis - y_results[i]
-		acumulated_error += error ** 2
-	
-	mean_square_error = acumulated_error / len(x_features)
-
-	# Returns the mean square error value.
-	__error__.append(mean_square_error)
+    # Returns the mean square error value instead of appending it directly to __error__
+    return mean_square_error
 
 # ====================================================================================================================================== #
 #                                                       GRADIENT DESCENT FUNCTION                                                        #
@@ -144,14 +144,18 @@ def mean_square_error_function(parameters, x_features, y_results):
 
 
 def gradient_descent_function(parameters, x_features, y_results, alfa):
+    m = len(x_features)
     gradient_descent = list(parameters)
     for i in range(len(parameters)):
         temp = 0
-        for j in range(len(x_features)):
+        for j in range(m):
             error = hypothesis_function(parameters, x_features[j]) - y_results[j]
             temp += error * x_features[j][i]
-        gradient_descent[i] = parameters[i] - (alfa * (1/len(x_features)) * temp)
+        gradient_descent[i] = parameters[i] - alfa * (1/m) * temp
     return gradient_descent
+
+
+    
 
 # ====================================================================================================================================== #
 #                                                      		   SCALING DATA SET                                                          #
@@ -176,35 +180,71 @@ def gradient_descent_function(parameters, x_features, y_results, alfa):
 def scaling_function(x_features):
     x_features = np.asarray(x_features).T.tolist()
 
+    for i in range(1, len(x_features)): 
+        for j in range(len(x_features[i])):
+            acum=+ x_features[i][j]
+        avg = acum/(len(x_features[i]))
+        max_val = max(x_features[i])
+        for j in range(len(x_features[i])):
+            x_features[i][j] = (x_features[i][j] - avg)/(max_val)  #Mean scaling
+    return np.asarray(x_features).T.tolist() # Aplica el escalado con la media
+"""
+def scaling_function(x_features):
+    x_features = np.asarray(x_features).T.tolist()
     for i in range(1, len(x_features)):
         min_val = min(x_features[i])
         max_val = max(x_features[i])
         for j in range(len(x_features[i])):
             x_features[i][j] = (x_features[i][j] - min_val) / (max_val - min_val)
-
     return np.asarray(x_features).T.tolist()
+"""
+
 
 # ====================================================================================================================================== #
 #                                                         1. Process Data Set                                                            #
 # ====================================================================================================================================== #
 
 # Load data from CSV file
+# First pass: Calculate the mean temperature
+temp_values = []
+clouds_all_values = []
+
+with open('Metro_Interstate_Traffic_Volume.csv', mode='r') as file:
+    csv_reader = csv.DictReader(file)
+    for row in csv_reader:
+        temp_value = float(row['temp'])
+        clouds_value = float(row['clouds_all'])
+        temp_values.append(temp_value)
+        clouds_all_values.append(clouds_value)
+
+# Calculate the mean temperature
+mean_temp = np.mean(temp_values)
+
+# Second pass: Process the data with the condition applied
 x_features = []
 y_results = []
 
 with open('Metro_Interstate_Traffic_Volume.csv', mode='r') as file:
     csv_reader = csv.DictReader(file)
     for row in csv_reader:
-        # Extract features (temp, rain_1h) and target (traffic_volume)
-        x_features.append([1, float(row['temp']), float(row['rain_1h'])])  # 1 for bias
-        y_results.append(float(row['traffic_volume']))
+        temp_value = float(row['temp'])
+        clouds_value = float(row['clouds_all'])
+        traffic_volume_value = float(row['traffic_volume'])
+
+        # Apply the condition: if temp_value > 255, use the mean; otherwise, keep the real value
+        if temp_value > 255:
+            temp_value = mean_temp
+
+        x_features.append([1, temp_value, clouds_value])  # 1 for the bias term
+        y_results.append(traffic_volume_value)
 
 # Convert lists to numpy arrays
 x_features = np.array(x_features)
 y_results = np.array(y_results)
 
-# Scale the data set
+# Scale the dataset
 x_features = scaling_function(x_features)
+
 
 # ====================================================================================================================================== #
 #	                                                         2. Computation                                                              #
@@ -223,7 +263,8 @@ while True:
 	# DESCENDING GRADIENT
     parameters = gradient_descent_function(parameters, x_features, y_results, alfa)	
 	# MEAN SQUARE ERROR (Shows errors, Not used in calculations.)
-    mean_square_error_function(parameters, x_features, y_results)
+    train_error = mean_square_error_function(parameters, x_features, y_results)
+    __error__.append(train_error)
 
 	# Addition of the learning iteration.
     epoch = epoch + 1
@@ -232,17 +273,36 @@ while True:
     print("Old Parameters: ", old_parameters)
 	# When the the parameters remain the same (minimum error) or the epoch (training iterations) are reached, print the result.
     if(old_parameters == parameters or epoch == 200):
-		#print("Samples:")
-		#print(x_features)
-		#print("Final Params:")
-		#print(parameters)		
         break
+
+
+
+print(f"Final Train Error: {__error__[1]}")
+
 
 # print the final parameters
 print("Final Parameters: ", parameters)
 
+
+# ====================================================================================================================================== #
+#                                                           MAKE PREDICTION                                                             #
+# ====================================================================================================================================== #
+# Prepare features for prediction and scale them
+# Assuming that [1, 288, 1] is the feature vector for prediction
+input_features = np.array([[1, 288, 40]])  # Example feature vector
+scaled_input_features = scaling_function(input_features)  # Scale the input features
+
 # make a prediction using the final parameters
-print("Prediction: ", hypothesis_function(parameters, [1, 0.5, 0.1]))
+print("Prediction: ", hypothesis_function(parameters, scaled_input_features[0]))
+
+# ====================================================================================================================================== #
+#	                                                             3. Graph                                                              	 #
+# ====================================================================================================================================== #
+
+plt.plot(__error__, label='Train Error')
+plt.legend()
+plt.show()
+# ====================================================================================================================================== #
 
 
 
@@ -250,6 +310,8 @@ print("Prediction: ", hypothesis_function(parameters, [1, 0.5, 0.1]))
 #	                                                             3. Graph                                                              	 #
 # ====================================================================================================================================== #
 
-plt.plot(__error__)
+plt.plot(__error__, label='Train Error')
+plt.legend()
 plt.show()
 # ====================================================================================================================================== #
+
