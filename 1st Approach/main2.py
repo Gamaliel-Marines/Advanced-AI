@@ -55,7 +55,10 @@ __error__ = []
 # ====================================================================================================================================== #
 
 def hypothesis_function(parameters, x_features):
-    return sum(param * feature for param, feature in zip(parameters, x_features))
+	sum = 0                                                    	 	
+	for i in range(len(parameters)):                              			
+		sum = sum + (parameters[i] * x_features[i])   			
+	return sum 
 
 # ====================================================================================================================================== #
 #                                                      MEAN SQUARE ERROR FUNCTION                                                        #
@@ -151,8 +154,8 @@ x_test_scaled = scaling_function(x_test)
 # ====================================================================================================================================== #
 
 parameters = [0, 0, 0]  # Initialize with zeros
-alfa = 0.3
-epoch = 300
+alfa = 0.9
+epoch = 10000
 
 train_errors = []
 val_errors = []
